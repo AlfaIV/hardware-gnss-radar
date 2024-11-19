@@ -5,12 +5,14 @@ import aiohttp
 import requests
 import time
 from datetime import datetime, timezone
+import logging
 
 from sdr import sdrConnect
 from signals import signalSpectrum, signalMeanPower
 
 url = 'http://85.198.109.43:1000/hardware/'
 token = '1234567890'
+logging.basicConfig(level=logging.DEBUG)
 
 
 def sendPower(sdr):
@@ -46,7 +48,7 @@ def sendPower(sdr):
 def sendSpectrum(sdr):
     startTime = datetime.now(timezone.utc).isoformat()
     samples = sdr.read_samples(256 * 1024)
-    print(samples)
+    # print(samples)
     freqs, spectrum = signalSpectrum(samples, sdr.sample_rate)
     print(f'Получено {len(samples)} выборок.')
     
