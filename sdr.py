@@ -40,4 +40,3 @@ def sdrConnect(func):
         print("Успешное отключение от SDR")
         return result
     return wrapper
-

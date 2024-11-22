@@ -4,20 +4,23 @@ import asyncio
 import aiohttp
 import requests
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import logging
 
 from sdr import sdrConnect
 from signals import signalSpectrum, signalMeanPower
 
-url = 'http://85.198.109.43:1000/hardware/'
+url = 'http://85.198.109.43:1000/hardware'
 token = '1234567890'
+# sample_num = 256 * 1024
+sample_num = 256
 logging.basicConfig(level=logging.DEBUG)
 
 
 def sendPower(sdr):
     startTime = datetime.now(timezone.utc).isoformat()
-    samples = sdr.read_samples(256 * 1024)
+    timeStep = (datetime.now(timezone.utc) + timedelta(seconds=1/sdr.sample_rate)).isoformat()
+    samples = sdr.read_samples(sample_num)
     print(f'Получено {len(samples)} выборок.')
     power = signalMeanPower(samples)
     print(f'Рассчитанная мощность: {power}')
@@ -34,21 +37,21 @@ def sendPower(sdr):
         'data': {
             'power': power.tolist(),
             'startTime': startTime,
-            'timeStep': 1, # пока мок, хз
+            'timeStep': timeStep,
         }
     }
     
     response = requests.post(f"{url}/power", json=data)
     if response.status_code == 200:
         print('Успешно отправлена мощность сигнала!')
-        print('Ответ сервера:', response.json())
+        print('Ответ сервера:', response)
     else:
         print('Ошибка при отправке мощности сигнала:', response.status_code)
+        print('Ответ сервера:', response)
 
 def sendSpectrum(sdr):
     startTime = datetime.now(timezone.utc).isoformat()
-    samples = sdr.read_samples(256 * 1024)
-    # print(samples)
+    samples = sdr.read_samples(sample_num)
     freqs, spectrum = signalSpectrum(samples, sdr.sample_rate)
     print(f'Получено {len(samples)} выборок.')
     
@@ -72,9 +75,10 @@ def sendSpectrum(sdr):
     response = requests.post(f"{url}/spectrum", json=data)
     if response.status_code == 200:
         print('Успешно отправлен спектр сигнала!')
-        print('Ответ сервера:', response.json())
+        print('Ответ сервера:', response)
     else:
         print('Ошибка при отправке спектра сигнала:', response.status_code)
+        print('Ответ сервера:', response)
 
 @sdrConnect
 def main(sdr):
